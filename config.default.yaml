@@ -1,0 +1,4 @@
+defaultScoreMode: best
+maxLeaderboardEntries: 1000
+announceResults: true
+resultAnnouncementChannel: all

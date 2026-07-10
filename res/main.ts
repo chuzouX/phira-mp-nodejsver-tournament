@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import type { PluginModule, PluginApi } from 'phira-plugin-api';
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -190,6 +191,61 @@ const pluginModule: PluginModule = {
 
     await loadData();
     api.logger.info(`[比赛插件] 已加载，共 ${tournaments.size} 个比赛`);
+
+    function verifyAesCbcToken(token: string, secret: string): boolean {
+      try {
+        const encryptedBuffer = Buffer.from(token, 'hex');
+        if (encryptedBuffer.length < 17) return false;
+        const iv = encryptedBuffer.subarray(0, 16);
+        const ciphertext = encryptedBuffer.subarray(16);
+        const key = crypto.createHash('sha256').update(secret).digest();
+        const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+        let decrypted = decipher.update(ciphertext);
+        decrypted = Buffer.concat([decrypted, decipher.final()]);
+        const dateStr = new Date().toISOString().substring(0, 10);
+        const expectedPlain = `${dateStr}_${secret}_xy521`;
+        return decrypted.toString('utf-8') === expectedPlain;
+      } catch {
+        return false;
+      }
+    }
+
+    function requireAdmin(handler: (req: any, res: any) => void) {
+      return (req: any, res: any) => {
+        const adminAuth = (api as any).adminSecretAuthMiddleware;
+        if (adminAuth) {
+          return adminAuth(req, res, () => handler(req, res));
+        }
+        const adminSecret = process.env.ADMIN_SECRET;
+        if (!adminSecret) {
+          res.status(500).json({ error: 'ADMIN_SECRET not configured' });
+          return;
+        }
+        const secretHeader = req.headers['x-admin-secret'] as string;
+        if (!secretHeader) {
+          res.status(401).json({ error: 'Unauthorized: Missing x-admin-secret header' });
+          return;
+        }
+        if (verifyAesCbcToken(secretHeader, adminSecret)) {
+          return handler(req, res);
+        }
+        const timestampHeader = req.headers['x-admin-timestamp'] as string;
+        if (timestampHeader) {
+          const timestamp = parseInt(timestampHeader, 10);
+          const now = Math.floor(Date.now() / 1000);
+          if (Math.abs(now - timestamp) <= 300) {
+            const expectedHash = crypto
+              .createHash('sha256')
+              .update(adminSecret + timestamp)
+              .digest('hex');
+            if (secretHeader === expectedHash) {
+              return handler(req, res);
+            }
+          }
+        }
+        res.status(401).json({ error: 'Unauthorized: Invalid admin secret' });
+      };
+    }
 
     unsubscribers.push(
       api.events.on('room:gameEnd', async ({ room, rankings }) => {
@@ -652,7 +708,7 @@ const pluginModule: PluginModule = {
       }
     });
 
-    api.registerRoute('get', '/api/tournament/list', (_req, res) => {
+    api.registerRoute('get', '/api/tournament/list', requireAdmin((_req, res) => {
       const list = Array.from(tournaments.values()).map(t => ({
         id: t.id,
         name: t.name,
@@ -666,9 +722,9 @@ const pluginModule: PluginModule = {
         endTime: t.endTime,
       }));
       res.json({ success: true, data: list });
-    });
+    }));
 
-    api.registerRoute('post', '/api/tournament', async (req, res) => {
+    api.registerRoute('post', '/api/tournament', requireAdmin(async (req, res) => {
       const { id, name, roomId, description, scoreMode = defaultScoreMode } = req.body;
       if (!id || !name || !roomId) {
         res.status(400).json({ success: false, message: '缺少必要参数: id, name, roomId' });
@@ -692,9 +748,9 @@ const pluginModule: PluginModule = {
       tournaments.set(id, tournament);
       await saveData();
       res.json({ success: true, message: `比赛 ${id} 创建成功` });
-    });
+    }));
 
-    api.registerRoute('get', '/api/tournament/:id', (req, res) => {
+    api.registerRoute('get', '/api/tournament/:id', requireAdmin((req, res) => {
       const tournament = tournaments.get(p(req.params.id));
       if (!tournament) {
         res.status(404).json({ success: false, message: '比赛不存在' });
@@ -716,9 +772,9 @@ const pluginModule: PluginModule = {
           scoreMode: tournament.scoreMode,
         },
       });
-    });
+    }));
 
-    api.registerRoute('put', '/api/tournament/:id/start', async (req, res) => {
+    api.registerRoute('put', '/api/tournament/:id/start', requireAdmin(async (req, res) => {
       const tournament = tournaments.get(p(req.params.id));
       if (!tournament) {
         res.status(404).json({ success: false, message: '比赛不存在' });
@@ -736,9 +792,9 @@ const pluginModule: PluginModule = {
       tournament.startTime = Date.now();
       await saveData();
       res.json({ success: true, message: '比赛已开始' });
-    });
+    }));
 
-    api.registerRoute('put', '/api/tournament/:id/end', async (req, res) => {
+    api.registerRoute('put', '/api/tournament/:id/end', requireAdmin(async (req, res) => {
       const tournament = tournaments.get(p(req.params.id));
       if (!tournament) {
         res.status(404).json({ success: false, message: '比赛不存在' });
@@ -752,9 +808,9 @@ const pluginModule: PluginModule = {
       tournament.endTime = Date.now();
       await saveData();
       res.json({ success: true, message: '比赛已结束' });
-    });
+    }));
 
-    api.registerRoute('delete', '/api/tournament/:id', async (req, res) => {
+    api.registerRoute('delete', '/api/tournament/:id', requireAdmin(async (req, res) => {
       const id = p(req.params.id);
       if (!tournaments.has(id)) {
         res.status(404).json({ success: false, message: '比赛不存在' });
@@ -763,9 +819,9 @@ const pluginModule: PluginModule = {
       tournaments.delete(id);
       await saveData();
       res.json({ success: true, message: '比赛已删除' });
-    });
+    }));
 
-    api.registerRoute('post', '/api/tournament/:id/register', async (req, res) => {
+    api.registerRoute('post', '/api/tournament/:id/register', requireAdmin(async (req, res) => {
       const tournament = tournaments.get(p(req.params.id));
       if (!tournament) {
         res.status(404).json({ success: false, message: '比赛不存在' });
@@ -789,9 +845,9 @@ const pluginModule: PluginModule = {
       });
       await saveData();
       res.json({ success: true, message: `用户 ${userName} 已注册` });
-    });
+    }));
 
-    api.registerRoute('post', '/api/tournament/:id/invite', async (req, res) => {
+    api.registerRoute('post', '/api/tournament/:id/invite', requireAdmin(async (req, res) => {
       const tournament = tournaments.get(p(req.params.id));
       if (!tournament) {
         res.status(404).json({ success: false, message: '比赛不存在' });
@@ -812,9 +868,9 @@ const pluginModule: PluginModule = {
       });
       await saveData();
       res.json({ success: true, message: `用户 ${userName} 已被邀请` });
-    });
+    }));
 
-    api.registerRoute('delete', '/api/tournament/:id/register/:userId', async (req, res) => {
+    api.registerRoute('delete', '/api/tournament/:id/register/:userId', requireAdmin(async (req, res) => {
       const tournament = tournaments.get(p(req.params.id));
       if (!tournament) {
         res.status(404).json({ success: false, message: '比赛不存在' });
@@ -833,9 +889,9 @@ const pluginModule: PluginModule = {
       tournament.participants.delete(userId);
       await saveData();
       res.json({ success: true, message: `用户 ${participant.userName} 已取消注册` });
-    });
+    }));
 
-    api.registerRoute('get', '/api/tournament/:id/leaderboard', (req, res) => {
+    api.registerRoute('get', '/api/tournament/:id/leaderboard', requireAdmin((req, res) => {
       const tournament = tournaments.get(p(req.params.id));
       if (!tournament) {
         res.status(404).json({ success: false, message: '比赛不存在' });
@@ -843,7 +899,7 @@ const pluginModule: PluginModule = {
       }
       const leaderboard = getLeaderboard(tournament);
       res.json({ success: true, data: leaderboard });
-    });
+    }));
 
     if (!cfg.defaultScoreMode) {
       api.writePluginConfig({

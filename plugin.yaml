@@ -2,10 +2,11 @@
 id: tournament
 uuid: e8a3d2b1-6c4f-4e9a-8b7d-2c5f9a4e6d3b
 name: Tournament Plugin
-version: 1.0.0
+version: 1.1.0
 description: 排行榜模式比赛插件，支持比赛创建、选手注册、实时计分和排行榜展示
 author: Phira NodejsVer MP Server Team - chuzouX
 license: MIT
+repository: https://github.com/chuzouX/phira-mp-nodejsver-tournament
 main: main.js
 dependencies: []
 serverVersion: ">=0.5.0"

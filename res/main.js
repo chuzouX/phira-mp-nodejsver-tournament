@@ -1,12 +1,112 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("fs");
-const path = require("path");
+const path = __importStar(require("path"));
 const tournaments = new Map();
 const unsubscribers = [];
 const DATA_DIR = path.join('data', 'tournament');
 function p(val) {
     return Array.isArray(val) ? val[0] : (val ?? '');
+}
+function generateTournamentInfo(tournament) {
+    const stateLabel = tournament.state === 'pending' ? '未开始' : tournament.state === 'active' ? '进行中' : '已结束';
+    const lines = [
+        `【${tournament.name}】`,
+        `ID: ${tournament.id}`,
+        `状态: ${stateLabel}`,
+        `计分模式: ${tournament.scoreMode === 'best' ? '最佳成绩' : '累计成绩'}`,
+        `参赛人数: ${tournament.participants.size}`,
+        `房间 ID: ${tournament.roomId}`,
+    ];
+    if (tournament.startTime) {
+        lines.push(`开始时间: ${new Date(tournament.startTime).toLocaleString()}`);
+    }
+    if (tournament.endTime) {
+        lines.push(`结束时间: ${new Date(tournament.endTime).toLocaleString()}`);
+    }
+    return lines.join('\n');
+}
+function getLeaderboard(tournament) {
+    let entries = [...tournament.entries];
+    if (tournament.scoreMode === 'best') {
+        const bestEntries = new Map();
+        for (const entry of entries) {
+            const existing = bestEntries.get(entry.userId);
+            if (!existing || entry.score > existing.score) {
+                bestEntries.set(entry.userId, entry);
+            }
+        }
+        entries = Array.from(bestEntries.values());
+    }
+    else {
+        const sumEntries = new Map();
+        for (const entry of entries) {
+            const existing = sumEntries.get(entry.userId);
+            if (existing) {
+                existing.score += entry.score;
+                existing.accuracy = (existing.accuracy * existing.count + entry.accuracy) / (existing.count + 1);
+                existing.count++;
+                existing.lastEntry = entry;
+            }
+            else {
+                sumEntries.set(entry.userId, {
+                    score: entry.score,
+                    accuracy: entry.accuracy,
+                    count: 1,
+                    lastEntry: entry,
+                });
+            }
+        }
+        entries = Array.from(sumEntries.values()).map(s => ({
+            ...s.lastEntry,
+            score: s.score,
+            accuracy: s.accuracy,
+        }));
+    }
+    entries.sort((a, b) => b.score - a.score);
+    return entries.map((entry, index) => ({
+        rank: index + 1,
+        userId: entry.userId,
+        userName: entry.userName,
+        score: entry.score,
+        accuracy: entry.accuracy,
+        chartId: entry.chartId,
+        chartName: entry.chartName,
+        submittedAt: entry.submittedAt,
+    }));
 }
 async function ensureDataDir() {
     await fs_1.promises.mkdir(DATA_DIR, { recursive: true });
@@ -37,26 +137,11 @@ async function loadData() {
             });
         }
     }
-    catch {
+    catch (err) {
+        if (err.code !== 'ENOENT') {
+            console.error('[比赛插件] 加载比赛数据失败:', err);
+        }
     }
-}
-function generateTournamentInfo(tournament) {
-    const stateLabel = tournament.state === 'pending' ? '未开始' : tournament.state === 'active' ? '进行中' : '已结束';
-    const lines = [
-        `【${tournament.name}】`,
-        `ID: ${tournament.id}`,
-        `状态: ${stateLabel}`,
-        `计分模式: ${tournament.scoreMode === 'best' ? '最佳成绩' : '累计成绩'}`,
-        `参赛人数: ${tournament.participants.size}`,
-        `房间 ID: ${tournament.roomId}`,
-    ];
-    if (tournament.startTime) {
-        lines.push(`开始时间: ${new Date(tournament.startTime).toLocaleString()}`);
-    }
-    if (tournament.endTime) {
-        lines.push(`结束时间: ${new Date(tournament.endTime).toLocaleString()}`);
-    }
-    return lines.join('\n');
 }
 const pluginModule = {
     name: 'tournament',
@@ -692,53 +777,4 @@ const pluginModule = {
         tournaments.clear();
     },
 };
-function getLeaderboard(tournament) {
-    let entries = [...tournament.entries];
-    if (tournament.scoreMode === 'best') {
-        const bestEntries = new Map();
-        for (const entry of entries) {
-            const existing = bestEntries.get(entry.userId);
-            if (!existing || entry.score > existing.score) {
-                bestEntries.set(entry.userId, entry);
-            }
-        }
-        entries = Array.from(bestEntries.values());
-    }
-    else {
-        const sumEntries = new Map();
-        for (const entry of entries) {
-            const existing = sumEntries.get(entry.userId);
-            if (existing) {
-                existing.score += entry.score;
-                existing.accuracy = (existing.accuracy * existing.count + entry.accuracy) / (existing.count + 1);
-                existing.count++;
-                existing.lastEntry = entry;
-            }
-            else {
-                sumEntries.set(entry.userId, {
-                    score: entry.score,
-                    accuracy: entry.accuracy,
-                    count: 1,
-                    lastEntry: entry,
-                });
-            }
-        }
-        entries = Array.from(sumEntries.values()).map(s => ({
-            ...s.lastEntry,
-            score: s.score,
-            accuracy: s.accuracy,
-        }));
-    }
-    entries.sort((a, b) => b.score - a.score);
-    return entries.map((entry, index) => ({
-        rank: index + 1,
-        userId: entry.userId,
-        userName: entry.userName,
-        score: entry.score,
-        accuracy: entry.accuracy,
-        chartId: entry.chartId,
-        chartName: entry.chartName,
-        submittedAt: entry.submittedAt,
-    }));
-}
 exports.default = pluginModule;

@@ -97,5 +97,5 @@ resultAnnouncementChannel: all
 
 - **插件 ID**: tournament
 - **UUID**: e8a3d2b1-6c4f-4e9a-8b7d-2c5f9a4e6d3b
-- **版本**: 1.1.0
+- **版本**: 1.1.1
 - **依赖**: 无

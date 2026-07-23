@@ -9,7 +9,7 @@ license: MIT
 repository: https://github.com/chuzouX/phira-mp-nodejsver-tournament
 main: main.js
 dependencies: []
-serverVersion: ">=0.5.0"
+serverVersion: '>=0.5.0'
 tags:
   - tournament
   - competition

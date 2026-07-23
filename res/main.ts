@@ -66,7 +66,8 @@ function p(val: string | string[] | undefined): string {
 }
 
 function generateTournamentInfo(tournament: Tournament): string {
-  const stateLabel = tournament.state === 'pending' ? '未开始' : tournament.state === 'active' ? '进行中' : '已结束';
+  const stateLabel =
+    tournament.state === 'pending' ? '未开始' : tournament.state === 'active' ? '进行中' : '已结束';
   const lines: string[] = [
     `【${tournament.name}】`,
     `ID: ${tournament.id}`,
@@ -106,12 +107,16 @@ function getLeaderboard(tournament: Tournament): Array<{
     }
     entries = Array.from(bestEntries.values());
   } else {
-    const sumEntries = new Map<number, { score: number; accuracy: number; count: number; lastEntry: LeaderboardEntry }>();
+    const sumEntries = new Map<
+      number,
+      { score: number; accuracy: number; count: number; lastEntry: LeaderboardEntry }
+    >();
     for (const entry of entries) {
       const existing = sumEntries.get(entry.userId);
       if (existing) {
         existing.score += entry.score;
-        existing.accuracy = (existing.accuracy * existing.count + entry.accuracy) / (existing.count + 1);
+        existing.accuracy =
+          (existing.accuracy * existing.count + entry.accuracy) / (existing.count + 1);
         existing.count++;
         existing.lastEntry = entry;
       } else {
@@ -123,7 +128,7 @@ function getLeaderboard(tournament: Tournament): Array<{
         });
       }
     }
-    entries = Array.from(sumEntries.values()).map(s => ({
+    entries = Array.from(sumEntries.values()).map((s) => ({
       ...s.lastEntry,
       score: s.score,
       accuracy: s.accuracy,
@@ -150,7 +155,7 @@ async function ensureDataDir(): Promise<void> {
 
 async function saveData(): Promise<void> {
   await ensureDataDir();
-  const serialized: TournamentSerialized[] = Array.from(tournaments.values()).map(t => ({
+  const serialized: TournamentSerialized[] = Array.from(tournaments.values()).map((t) => ({
     ...t,
     participants: Array.from(t.participants.values()),
   }));
@@ -278,7 +283,9 @@ const pluginModule: PluginModule = {
             }
 
             changed = true;
-            api.logger.debug(`[比赛插件] 比赛 ${tournament.id} 记录成绩: ${ranking.userName} - ${ranking.score}`);
+            api.logger.debug(
+              `[比赛插件] 比赛 ${tournament.id} 记录成绩: ${ranking.userName} - ${ranking.score}`,
+            );
           }
         }
         if (changed) await saveData();
@@ -302,7 +309,9 @@ const pluginModule: PluginModule = {
                 content: '你并未参加此次的锦标赛',
               },
             });
-            api.logger.info(`[比赛插件] 非参赛玩家 ${userName}(${userId}) 尝试创建锦标赛房间 ${roomId}，已被拒绝`);
+            api.logger.info(
+              `[比赛插件] 非参赛玩家 ${userName}(${userId}) 尝试创建锦标赛房间 ${roomId}，已被拒绝`,
+            );
             return;
           }
 
@@ -315,7 +324,12 @@ const pluginModule: PluginModule = {
             },
           });
 
-          const stateLabel = tournament.state === 'pending' ? '未开始' : tournament.state === 'active' ? '进行中' : '已结束';
+          const stateLabel =
+            tournament.state === 'pending'
+              ? '未开始'
+              : tournament.state === 'active'
+                ? '进行中'
+                : '已结束';
           const lines: string[] = [
             `【${tournament.name}】`,
             `ID: ${tournament.id}`,
@@ -339,7 +353,9 @@ const pluginModule: PluginModule = {
             });
           }, 500);
 
-          api.logger.info(`[比赛插件] 参赛玩家 ${userName}(${userId}) 尝试创建锦标赛房间 ${roomId}，已提示查看比赛详情`);
+          api.logger.info(
+            `[比赛插件] 参赛玩家 ${userName}(${userId}) 尝试创建锦标赛房间 ${roomId}，已提示查看比赛详情`,
+          );
           return;
         }
       }),
@@ -360,9 +376,16 @@ const pluginModule: PluginModule = {
               },
             });
             api.roomManager.removePlayerFromRoom(room.id, user.id);
-            api.logger.info(`[比赛插件] 非参赛玩家 ${user.name}(${user.id}) 尝试加入锦标赛房间 ${room.id}，已被拒绝`);
+            api.logger.info(
+              `[比赛插件] 非参赛玩家 ${user.name}(${user.id}) 尝试加入锦标赛房间 ${room.id}，已被拒绝`,
+            );
           } else {
-            const stateLabel = tournament.state === 'pending' ? '未开始' : tournament.state === 'active' ? '进行中' : '已结束';
+            const stateLabel =
+              tournament.state === 'pending'
+                ? '未开始'
+                : tournament.state === 'active'
+                  ? '进行中'
+                  : '已结束';
             const lines: string[] = [
               `【${tournament.name}】`,
               `ID: ${tournament.id}`,
@@ -459,7 +482,9 @@ const pluginModule: PluginModule = {
               maxPlayers: 32,
             });
             api.roomManager.setRoomWhitelist(roomId, whitelist);
-            api.logger.info(`[比赛插件] 比赛 ${id} (${name}) 创建成功，房间ID: ${roomId}，白名单人数: ${whitelist.length}`);
+            api.logger.info(
+              `[比赛插件] 比赛 ${id} (${name}) 创建成功，房间ID: ${roomId}，白名单人数: ${whitelist.length}`,
+            );
           } catch (err) {
             tournaments.delete(id);
             await saveData();
@@ -492,7 +517,9 @@ const pluginModule: PluginModule = {
           }
           api.logger.info(`  选手数量: ${tournament.participants.size}`);
           api.logger.info(`  成绩记录: ${tournament.entries.length}`);
-          api.logger.info(`  计分模式: ${tournament.scoreMode === 'best' ? '最佳成绩' : '累计成绩'}`);
+          api.logger.info(
+            `  计分模式: ${tournament.scoreMode === 'best' ? '最佳成绩' : '累计成绩'}`,
+          );
           break;
         }
 
@@ -547,7 +574,9 @@ const pluginModule: PluginModule = {
             api.logger.info(`[比赛插件] 比赛 ${id} 最终排名:`);
             for (let i = 0; i < Math.min(10, leaderboard.length); i++) {
               const entry = leaderboard[i];
-              api.logger.info(`  ${i + 1}. ${entry.userName} - 分数: ${entry.score}, 准确率: ${entry.accuracy.toFixed(2)}%`);
+              api.logger.info(
+                `  ${i + 1}. ${entry.userName} - 分数: ${entry.score}, 准确率: ${entry.accuracy.toFixed(2)}%`,
+              );
             }
           }
           break;
@@ -698,7 +727,9 @@ const pluginModule: PluginModule = {
           api.logger.info(`[比赛插件] 比赛 ${id} 排行榜:`);
           for (let i = 0; i < Math.min(10, leaderboard.length); i++) {
             const entry = leaderboard[i];
-            api.logger.info(`  ${i + 1}. ${entry.userName} - 分数: ${entry.score}, 准确率: ${entry.accuracy.toFixed(2)}%`);
+            api.logger.info(
+              `  ${i + 1}. ${entry.userName} - 分数: ${entry.score}, 准确率: ${entry.accuracy.toFixed(2)}%`,
+            );
           }
           break;
         }
@@ -708,198 +739,238 @@ const pluginModule: PluginModule = {
       }
     });
 
-    api.registerRoute('get', '/api/tournament/list', requireAdmin((_req, res) => {
-      const list = Array.from(tournaments.values()).map(t => ({
-        id: t.id,
-        name: t.name,
-        description: t.description,
-        roomId: t.roomId,
-        state: t.state,
-        participantCount: t.participants.size,
-        entryCount: t.entries.length,
-        createdAt: t.createdAt,
-        startTime: t.startTime,
-        endTime: t.endTime,
-      }));
-      res.json({ success: true, data: list });
-    }));
+    api.registerRoute(
+      'get',
+      '/api/tournament/list',
+      requireAdmin((_req, res) => {
+        const list = Array.from(tournaments.values()).map((t) => ({
+          id: t.id,
+          name: t.name,
+          description: t.description,
+          roomId: t.roomId,
+          state: t.state,
+          participantCount: t.participants.size,
+          entryCount: t.entries.length,
+          createdAt: t.createdAt,
+          startTime: t.startTime,
+          endTime: t.endTime,
+        }));
+        res.json({ success: true, data: list });
+      }),
+    );
 
-    api.registerRoute('post', '/api/tournament', requireAdmin(async (req, res) => {
-      const { id, name, roomId, description, scoreMode = defaultScoreMode } = req.body;
-      if (!id || !name || !roomId) {
-        res.status(400).json({ success: false, message: '缺少必要参数: id, name, roomId' });
-        return;
-      }
-      if (tournaments.has(id)) {
-        res.status(400).json({ success: false, message: `比赛 ${id} 已存在` });
-        return;
-      }
-      const tournament: Tournament = {
-        id,
-        name,
-        roomId,
-        description,
-        createdAt: Date.now(),
-        state: 'pending',
-        participants: new Map(),
-        entries: [],
-        scoreMode: scoreMode as 'best' | 'sum',
-      };
-      tournaments.set(id, tournament);
-      await saveData();
-      res.json({ success: true, message: `比赛 ${id} 创建成功` });
-    }));
+    api.registerRoute(
+      'post',
+      '/api/tournament',
+      requireAdmin(async (req, res) => {
+        const { id, name, roomId, description, scoreMode = defaultScoreMode } = req.body;
+        if (!id || !name || !roomId) {
+          res.status(400).json({ success: false, message: '缺少必要参数: id, name, roomId' });
+          return;
+        }
+        if (tournaments.has(id)) {
+          res.status(400).json({ success: false, message: `比赛 ${id} 已存在` });
+          return;
+        }
+        const tournament: Tournament = {
+          id,
+          name,
+          roomId,
+          description,
+          createdAt: Date.now(),
+          state: 'pending',
+          participants: new Map(),
+          entries: [],
+          scoreMode: scoreMode as 'best' | 'sum',
+        };
+        tournaments.set(id, tournament);
+        await saveData();
+        res.json({ success: true, message: `比赛 ${id} 创建成功` });
+      }),
+    );
 
-    api.registerRoute('get', '/api/tournament/:id', requireAdmin((req, res) => {
-      const tournament = tournaments.get(p(req.params.id));
-      if (!tournament) {
-        res.status(404).json({ success: false, message: '比赛不存在' });
-        return;
-      }
-      res.json({
-        success: true,
-        data: {
-          id: tournament.id,
-          name: tournament.name,
-          description: tournament.description,
-          roomId: tournament.roomId,
-          state: tournament.state,
-          createdAt: tournament.createdAt,
-          startTime: tournament.startTime,
-          endTime: tournament.endTime,
-          participantCount: tournament.participants.size,
-          entryCount: tournament.entries.length,
-          scoreMode: tournament.scoreMode,
-        },
-      });
-    }));
+    api.registerRoute(
+      'get',
+      '/api/tournament/:id',
+      requireAdmin((req, res) => {
+        const tournament = tournaments.get(p(req.params.id));
+        if (!tournament) {
+          res.status(404).json({ success: false, message: '比赛不存在' });
+          return;
+        }
+        res.json({
+          success: true,
+          data: {
+            id: tournament.id,
+            name: tournament.name,
+            description: tournament.description,
+            roomId: tournament.roomId,
+            state: tournament.state,
+            createdAt: tournament.createdAt,
+            startTime: tournament.startTime,
+            endTime: tournament.endTime,
+            participantCount: tournament.participants.size,
+            entryCount: tournament.entries.length,
+            scoreMode: tournament.scoreMode,
+          },
+        });
+      }),
+    );
 
-    api.registerRoute('put', '/api/tournament/:id/start', requireAdmin(async (req, res) => {
-      const tournament = tournaments.get(p(req.params.id));
-      if (!tournament) {
-        res.status(404).json({ success: false, message: '比赛不存在' });
-        return;
-      }
-      if (tournament.state === 'active') {
-        res.status(400).json({ success: false, message: '比赛已经在进行中' });
-        return;
-      }
-      if (tournament.state === 'ended') {
-        res.status(400).json({ success: false, message: '比赛已经结束' });
-        return;
-      }
-      tournament.state = 'active';
-      tournament.startTime = Date.now();
-      await saveData();
-      res.json({ success: true, message: '比赛已开始' });
-    }));
+    api.registerRoute(
+      'put',
+      '/api/tournament/:id/start',
+      requireAdmin(async (req, res) => {
+        const tournament = tournaments.get(p(req.params.id));
+        if (!tournament) {
+          res.status(404).json({ success: false, message: '比赛不存在' });
+          return;
+        }
+        if (tournament.state === 'active') {
+          res.status(400).json({ success: false, message: '比赛已经在进行中' });
+          return;
+        }
+        if (tournament.state === 'ended') {
+          res.status(400).json({ success: false, message: '比赛已经结束' });
+          return;
+        }
+        tournament.state = 'active';
+        tournament.startTime = Date.now();
+        await saveData();
+        res.json({ success: true, message: '比赛已开始' });
+      }),
+    );
 
-    api.registerRoute('put', '/api/tournament/:id/end', requireAdmin(async (req, res) => {
-      const tournament = tournaments.get(p(req.params.id));
-      if (!tournament) {
-        res.status(404).json({ success: false, message: '比赛不存在' });
-        return;
-      }
-      if (tournament.state !== 'active') {
-        res.status(400).json({ success: false, message: '比赛未在进行中' });
-        return;
-      }
-      tournament.state = 'ended';
-      tournament.endTime = Date.now();
-      await saveData();
-      res.json({ success: true, message: '比赛已结束' });
-    }));
+    api.registerRoute(
+      'put',
+      '/api/tournament/:id/end',
+      requireAdmin(async (req, res) => {
+        const tournament = tournaments.get(p(req.params.id));
+        if (!tournament) {
+          res.status(404).json({ success: false, message: '比赛不存在' });
+          return;
+        }
+        if (tournament.state !== 'active') {
+          res.status(400).json({ success: false, message: '比赛未在进行中' });
+          return;
+        }
+        tournament.state = 'ended';
+        tournament.endTime = Date.now();
+        await saveData();
+        res.json({ success: true, message: '比赛已结束' });
+      }),
+    );
 
-    api.registerRoute('delete', '/api/tournament/:id', requireAdmin(async (req, res) => {
-      const id = p(req.params.id);
-      if (!tournaments.has(id)) {
-        res.status(404).json({ success: false, message: '比赛不存在' });
-        return;
-      }
-      tournaments.delete(id);
-      await saveData();
-      res.json({ success: true, message: '比赛已删除' });
-    }));
+    api.registerRoute(
+      'delete',
+      '/api/tournament/:id',
+      requireAdmin(async (req, res) => {
+        const id = p(req.params.id);
+        if (!tournaments.has(id)) {
+          res.status(404).json({ success: false, message: '比赛不存在' });
+          return;
+        }
+        tournaments.delete(id);
+        await saveData();
+        res.json({ success: true, message: '比赛已删除' });
+      }),
+    );
 
-    api.registerRoute('post', '/api/tournament/:id/register', requireAdmin(async (req, res) => {
-      const tournament = tournaments.get(p(req.params.id));
-      if (!tournament) {
-        res.status(404).json({ success: false, message: '比赛不存在' });
-        return;
-      }
-      const { userId } = req.body;
-      if (!userId) {
-        res.status(400).json({ success: false, message: '缺少 userId 参数' });
-        return;
-      }
-      if (tournament.participants.has(userId)) {
-        res.status(400).json({ success: false, message: '用户已注册' });
-        return;
-      }
-      const player = api.getPlayer(userId);
-      const userName = player?.name ?? `用户${userId}`;
-      tournament.participants.set(userId, {
-        userId,
-        userName,
-        registeredAt: Date.now(),
-      });
-      await saveData();
-      res.json({ success: true, message: `用户 ${userName} 已注册` });
-    }));
+    api.registerRoute(
+      'post',
+      '/api/tournament/:id/register',
+      requireAdmin(async (req, res) => {
+        const tournament = tournaments.get(p(req.params.id));
+        if (!tournament) {
+          res.status(404).json({ success: false, message: '比赛不存在' });
+          return;
+        }
+        const { userId } = req.body;
+        if (!userId) {
+          res.status(400).json({ success: false, message: '缺少 userId 参数' });
+          return;
+        }
+        if (tournament.participants.has(userId)) {
+          res.status(400).json({ success: false, message: '用户已注册' });
+          return;
+        }
+        const player = api.getPlayer(userId);
+        const userName = player?.name ?? `用户${userId}`;
+        tournament.participants.set(userId, {
+          userId,
+          userName,
+          registeredAt: Date.now(),
+        });
+        await saveData();
+        res.json({ success: true, message: `用户 ${userName} 已注册` });
+      }),
+    );
 
-    api.registerRoute('post', '/api/tournament/:id/invite', requireAdmin(async (req, res) => {
-      const tournament = tournaments.get(p(req.params.id));
-      if (!tournament) {
-        res.status(404).json({ success: false, message: '比赛不存在' });
-        return;
-      }
-      const { userId } = req.body;
-      if (!userId) {
-        res.status(400).json({ success: false, message: '缺少 userId 参数' });
-        return;
-      }
-      const player = api.getPlayer(userId);
-      const userName = player?.name ?? `用户${userId}`;
-      tournament.participants.set(userId, {
-        userId,
-        userName,
-        registeredAt: Date.now(),
-        isInvited: true,
-      });
-      await saveData();
-      res.json({ success: true, message: `用户 ${userName} 已被邀请` });
-    }));
+    api.registerRoute(
+      'post',
+      '/api/tournament/:id/invite',
+      requireAdmin(async (req, res) => {
+        const tournament = tournaments.get(p(req.params.id));
+        if (!tournament) {
+          res.status(404).json({ success: false, message: '比赛不存在' });
+          return;
+        }
+        const { userId } = req.body;
+        if (!userId) {
+          res.status(400).json({ success: false, message: '缺少 userId 参数' });
+          return;
+        }
+        const player = api.getPlayer(userId);
+        const userName = player?.name ?? `用户${userId}`;
+        tournament.participants.set(userId, {
+          userId,
+          userName,
+          registeredAt: Date.now(),
+          isInvited: true,
+        });
+        await saveData();
+        res.json({ success: true, message: `用户 ${userName} 已被邀请` });
+      }),
+    );
 
-    api.registerRoute('delete', '/api/tournament/:id/register/:userId', requireAdmin(async (req, res) => {
-      const tournament = tournaments.get(p(req.params.id));
-      if (!tournament) {
-        res.status(404).json({ success: false, message: '比赛不存在' });
-        return;
-      }
-      const userId = parseInt(p(req.params.userId));
-      if (isNaN(userId)) {
-        res.status(400).json({ success: false, message: '无效的 userId' });
-        return;
-      }
-      const participant = tournament.participants.get(userId);
-      if (!participant) {
-        res.status(400).json({ success: false, message: '用户未注册' });
-        return;
-      }
-      tournament.participants.delete(userId);
-      await saveData();
-      res.json({ success: true, message: `用户 ${participant.userName} 已取消注册` });
-    }));
+    api.registerRoute(
+      'delete',
+      '/api/tournament/:id/register/:userId',
+      requireAdmin(async (req, res) => {
+        const tournament = tournaments.get(p(req.params.id));
+        if (!tournament) {
+          res.status(404).json({ success: false, message: '比赛不存在' });
+          return;
+        }
+        const userId = parseInt(p(req.params.userId));
+        if (isNaN(userId)) {
+          res.status(400).json({ success: false, message: '无效的 userId' });
+          return;
+        }
+        const participant = tournament.participants.get(userId);
+        if (!participant) {
+          res.status(400).json({ success: false, message: '用户未注册' });
+          return;
+        }
+        tournament.participants.delete(userId);
+        await saveData();
+        res.json({ success: true, message: `用户 ${participant.userName} 已取消注册` });
+      }),
+    );
 
-    api.registerRoute('get', '/api/tournament/:id/leaderboard', requireAdmin((req, res) => {
-      const tournament = tournaments.get(p(req.params.id));
-      if (!tournament) {
-        res.status(404).json({ success: false, message: '比赛不存在' });
-        return;
-      }
-      const leaderboard = getLeaderboard(tournament);
-      res.json({ success: true, data: leaderboard });
-    }));
+    api.registerRoute(
+      'get',
+      '/api/tournament/:id/leaderboard',
+      requireAdmin((req, res) => {
+        const tournament = tournaments.get(p(req.params.id));
+        if (!tournament) {
+          res.status(404).json({ success: false, message: '比赛不存在' });
+          return;
+        }
+        const leaderboard = getLeaderboard(tournament);
+        res.json({ success: true, data: leaderboard });
+      }),
+    );
 
     if (!cfg.defaultScoreMode) {
       api.writePluginConfig({
@@ -912,7 +983,7 @@ const pluginModule: PluginModule = {
   },
 
   async destroy() {
-    unsubscribers.forEach(unsub => unsub());
+    unsubscribers.forEach((unsub) => unsub());
     unsubscribers.length = 0;
     await saveData();
     tournaments.clear();

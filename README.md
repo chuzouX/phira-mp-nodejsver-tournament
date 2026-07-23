@@ -33,56 +33,68 @@ resultAnnouncementChannel: all
 ## 控制台命令
 
 ### tournament list
+
 列出所有比赛。
 
 ### tournament create \<id\> \<name\> \<roomId\>
+
 创建新比赛。
 
 ### tournament info \<id\>
+
 查看比赛详情。
 
 ### tournament start \<id\>
+
 开始比赛。
 
 ### tournament end \<id\>
+
 结束比赛。
 
 ### tournament delete \<id\>
+
 删除比赛。
 
 ### tournament register \<id\> \<userId\>
+
 注册选手。
 
 ### tournament invite \<id\> \<userId\>
+
 邀请选手。
 
 ### tournament unregister \<id\> \<userId\>
+
 取消注册选手。
 
 ### tournament leaderboard \<id\>
+
 显示排行榜。
 
 ## API 接口
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/tournament/list` | 获取比赛列表 |
-| POST | `/api/tournament` | 创建比赛 |
-| GET | `/api/tournament/:id` | 获取比赛详情 |
-| PUT | `/api/tournament/:id/start` | 开始比赛 |
-| PUT | `/api/tournament/:id/end` | 结束比赛 |
-| DELETE | `/api/tournament/:id` | 删除比赛 |
-| POST | `/api/tournament/:id/register` | 注册选手 |
-| POST | `/api/tournament/:id/invite` | 邀请选手 |
-| DELETE | `/api/tournament/:id/register/:userId` | 取消注册 |
-| GET | `/api/tournament/:id/leaderboard` | 获取排行榜 |
+| 方法   | 路径                                   | 说明         |
+| ------ | -------------------------------------- | ------------ |
+| GET    | `/api/tournament/list`                 | 获取比赛列表 |
+| POST   | `/api/tournament`                      | 创建比赛     |
+| GET    | `/api/tournament/:id`                  | 获取比赛详情 |
+| PUT    | `/api/tournament/:id/start`            | 开始比赛     |
+| PUT    | `/api/tournament/:id/end`              | 结束比赛     |
+| DELETE | `/api/tournament/:id`                  | 删除比赛     |
+| POST   | `/api/tournament/:id/register`         | 注册选手     |
+| POST   | `/api/tournament/:id/invite`           | 邀请选手     |
+| DELETE | `/api/tournament/:id/register/:userId` | 取消注册     |
+| GET    | `/api/tournament/:id/leaderboard`      | 获取排行榜   |
 
 ## 计分模式
 
 ### 最佳成绩（Best）
+
 每位选手只保留最高分记录，按最高分排名。
 
 ### 累计成绩（Sum）
+
 每位选手所有成绩相加，按总分排名，准确率为平均值。
 
 ## 工作原理

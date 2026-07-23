@@ -81,7 +81,8 @@ function getLeaderboard(tournament) {
             const existing = sumEntries.get(entry.userId);
             if (existing) {
                 existing.score += entry.score;
-                existing.accuracy = (existing.accuracy * existing.count + entry.accuracy) / (existing.count + 1);
+                existing.accuracy =
+                    (existing.accuracy * existing.count + entry.accuracy) / (existing.count + 1);
                 existing.count++;
                 existing.lastEntry = entry;
             }
@@ -94,7 +95,7 @@ function getLeaderboard(tournament) {
                 });
             }
         }
-        entries = Array.from(sumEntries.values()).map(s => ({
+        entries = Array.from(sumEntries.values()).map((s) => ({
             ...s.lastEntry,
             score: s.score,
             accuracy: s.accuracy,
@@ -117,7 +118,7 @@ async function ensureDataDir() {
 }
 async function saveData() {
     await ensureDataDir();
-    const serialized = Array.from(tournaments.values()).map(t => ({
+    const serialized = Array.from(tournaments.values()).map((t) => ({
         ...t,
         participants: Array.from(t.participants.values()),
     }));
@@ -268,7 +269,11 @@ const pluginModule = {
                         content: '点击确定查看比赛详情',
                     },
                 });
-                const stateLabel = tournament.state === 'pending' ? '未开始' : tournament.state === 'active' ? '进行中' : '已结束';
+                const stateLabel = tournament.state === 'pending'
+                    ? '未开始'
+                    : tournament.state === 'active'
+                        ? '进行中'
+                        : '已结束';
                 const lines = [
                     `【${tournament.name}】`,
                     `ID: ${tournament.id}`,
@@ -311,7 +316,11 @@ const pluginModule = {
                     api.logger.info(`[比赛插件] 非参赛玩家 ${user.name}(${user.id}) 尝试加入锦标赛房间 ${room.id}，已被拒绝`);
                 }
                 else {
-                    const stateLabel = tournament.state === 'pending' ? '未开始' : tournament.state === 'active' ? '进行中' : '已结束';
+                    const stateLabel = tournament.state === 'pending'
+                        ? '未开始'
+                        : tournament.state === 'active'
+                            ? '进行中'
+                            : '已结束';
                     const lines = [
                         `【${tournament.name}】`,
                         `ID: ${tournament.id}`,
@@ -638,7 +647,7 @@ const pluginModule = {
             }
         });
         api.registerRoute('get', '/api/tournament/list', requireAdmin((_req, res) => {
-            const list = Array.from(tournaments.values()).map(t => ({
+            const list = Array.from(tournaments.values()).map((t) => ({
                 id: t.id,
                 name: t.name,
                 description: t.description,
@@ -830,7 +839,7 @@ const pluginModule = {
         }
     },
     async destroy() {
-        unsubscribers.forEach(unsub => unsub());
+        unsubscribers.forEach((unsub) => unsub());
         unsubscribers.length = 0;
         await saveData();
         tournaments.clear();

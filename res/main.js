@@ -156,6 +156,7 @@ const pluginModule = {
         const maxLeaderboardEntries = cfg.maxLeaderboardEntries ?? 1000;
         await loadData();
         api.logger.info(`[比赛插件] 已加载，共 ${tournaments.size} 个比赛`);
+        const usedNonces = new Map();
         function verifyAesCbcToken(token, secret) {
             try {
                 const encryptedBuffer = Buffer.from(token, 'hex');
@@ -165,11 +166,35 @@ const pluginModule = {
                 const ciphertext = encryptedBuffer.subarray(16);
                 const key = crypto_1.default.createHash('sha256').update(secret).digest();
                 const decipher = crypto_1.default.createDecipheriv('aes-256-cbc', key, iv);
-                let decrypted = decipher.update(ciphertext);
-                decrypted = Buffer.concat([decrypted, decipher.final()]);
+                let decryptedBuf = decipher.update(ciphertext);
+                decryptedBuf = Buffer.concat([decryptedBuf, decipher.final()]);
+                const decrypted = decryptedBuf.toString('utf-8');
+                const now = Date.now();
+                for (const [nonce, expiresAt] of usedNonces.entries()) {
+                    if (now > expiresAt)
+                        usedNonces.delete(nonce);
+                }
+                // Format 1: timestamp + nonce
+                const suffix = `_${secret}_xy521`;
+                if (decrypted.endsWith(suffix)) {
+                    const prefix = decrypted.slice(0, decrypted.length - suffix.length);
+                    const parts = prefix.split('_');
+                    if (parts.length === 2 && /^\d{10}$/.test(parts[0])) {
+                        const timestamp = parseInt(parts[0], 10);
+                        const nonce = parts[1];
+                        const nowSec = Math.floor(Date.now() / 1000);
+                        if (Math.abs(nowSec - timestamp) > 300)
+                            return false;
+                        if (usedNonces.has(nonce))
+                            return false;
+                        usedNonces.set(nonce, Date.now() + 300 * 1000);
+                        return true;
+                    }
+                }
+                // Format 2: legacy
                 const dateStr = new Date().toISOString().substring(0, 10);
                 const expectedPlain = `${dateStr}_${secret}_xy521`;
-                return decrypted.toString('utf-8') === expectedPlain;
+                return decrypted === expectedPlain;
             }
             catch {
                 return false;
